@@ -23,6 +23,15 @@ A modern, production-ready Django 5 project structure with best practices, modul
 django-scaffold/
 ├── manage.py
 ├── pyproject.toml          # UV dependency management
+├── uv.lock                 # UV lockfile for reproducible builds
+├── ruff.toml              # Ruff linting configuration
+├── .yamllint              # YAML linting configuration
+├── Dockerfile             # Multi-stage Docker configuration
+├── docker-compose.yml     # Production Docker Compose
+├── docker-compose.override.yml  # Development overrides
+├── .env.example           # Environment variables template
+├── LICENSE
+└── README.md
 ├── config/
 │   ├── __init__.py
 │   ├── asgi.py
@@ -30,48 +39,48 @@ django-scaffold/
 │   ├── urls.py
 │   └── settings/
 │       ├── __init__.py
-│       ├── base.py
-│       ├── development.py
-│       ├── production.py
-│       └── testing.py
+│       ├── base.py         # Common settings
+│       ├── development.py  # Development settings (PostgreSQL)
+│       └── production.py   # Production settings (PostgreSQL + SSL)
 ├── apps/
 │   ├── __init__.py
 │   └── your-apps
 ├── core/
 │   ├── __init__.py
-│   ├── middleware.py
-│   ├── utils.py
-│   └── signals.py
-├── static/
-├── media/
-├── templates/
-├── tests/
-├── fixtures/
-├── Dockerfile.dev
-├── Dockerfile.prod
-├── docker-compose.yml
-├── .env.example
-└── README.md
+│   ├── middleware.py       # Custom middleware
+│   ├── utils.py           # Utility functions
+│   └── signals.py         # Global signals
+├── static/                # Static files
+├── media/                 # User uploads
+├── templates/             # Global templates
+├── tests/                 # Test files
+└── fixtures/              # Data fixtures
 ```
 
 ## 🛠️ Setup Instructions
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.13+
 - [UV](https://docs.astral.sh/uv/) package manager
 
 ### Local Development
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:sepydev/django-scaffold.git
    cd django-scaffold
    ```
 
 2. **Install UV** (if not already installed)
+
+Linux :
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+MacOS (with Homebrew):
+   ```bash
+   brew install uv
    ```
 
 3. **Install dependencies**
@@ -106,13 +115,17 @@ django-scaffold/
 
 2. **Run migrations**
    ```bash
-   docker-compose exec web uv run python manage.py migrate
+   docker-compose exec app python manage.py migrate
    ```
 
 3. **Create superuser**
    ```bash
-   docker-compose exec web uv run python manage.py createsuperuser
+   docker-compose exec app python manage.py createsuperuser
    ```
+
+4. **Access the application**
+   - Application: http://localhost:8811
+   - Database: PostgreSQL 16.9 with health checks
 
 ## 🏗️ Architecture
 
@@ -127,10 +140,24 @@ The project uses UV for fast, reliable dependency management:
 
 ### Settings Structure
 
-- **base.py**: Common settings using `django-environ`
-- **development.py**: Development-specific settings (SQLite, debug toolbar)
-- **production.py**: Production settings (PostgreSQL, security headers)
-- **testing.py**: Test-specific settings (in-memory database, fast hashers)
+- **base.py**: Common settings using `django-environ` with PostgreSQL default
+- **development.py**: Development settings with PostgreSQL and debug toolbar
+- **production.py**: Production settings with PostgreSQL, SSL, and security headers  
+- **database.py**: Centralized database configuration functions for all environments
+
+### Docker Configuration
+
+The project uses a **multi-stage Dockerfile** with optimized builds:
+
+- **Base stage**: Python 3.13 with UV dependency management
+- **Dev stage**: For development with bind-mounted source code
+- **Prod stage**: Production-ready with static files and Gunicorn
+
+**Key Docker Features:**
+- Modern PostgreSQL 16.9 with health checks
+- Automatic dependency installation with UV
+- Production-ready migrations and static collection
+- Environment file support with `.env`
 
 ### App Structure
 
@@ -146,15 +173,11 @@ The project uses UV for fast, reliable dependency management:
 - **Signal Handlers**: Decoupled event processing
 - **Utilities**: Common helper functions and classes
 
-## 🔧 Development Tools
+## �� Development Tools
 
 ### Code Quality
 
 ```bash
-# Format code
-uv run black .
-uv run isort .
-
 # Lint code with Ruff (replaces flake8)
 uv run ruff check .
 
@@ -206,18 +229,35 @@ uv sync --no-group develop --no-group test --no-group linter --no-group type
 
 1. **Build production image**
    ```bash
-   docker build -f Dockerfile.prod -t django-scaffold:latest .
+   docker build --target prod -t django-scaffold:latest .
    ```
 
 2. **Environment variables**
-   - Set production environment variables
-   - Configure database, Redis, email settings
-   - Set DEBUG=False and proper SECRET_KEY
+   - Set production environment variables in `.env`
+   - Configure database with `DATABASE_URL` or individual `DB_*` variables
+   - Set `DEBUG=False` and proper `SECRET_KEY`
 
 3. **Run production container**
    ```bash
    docker run -p 8000:8000 --env-file .env django-scaffold:latest
    ```
+
+4. **Or use Docker Compose for production**
+   ```bash
+   docker-compose up --build
+   ```
+
+### Docker Build Targets
+
+The multi-stage Dockerfile provides different targets:
+
+```bash
+# Development build (with development tools)
+docker build --target dev -t django-scaffold:dev .
+
+# Production build (optimized, no dev dependencies)
+docker build --target prod -t django-scaffold:prod .
+```
 
 ### Environment Variables
 
@@ -240,20 +280,8 @@ uv run python manage.py startapp myapp apps/myapp
 
 # Add to INSTALLED_APPS in settings/base.py
 LOCAL_APPS = [
-    'apps.users.apps.UsersConfig',
     'apps.myapp.apps.MyappConfig',  # Add this
 ]
-```
-
-### Using Services
-
-```python
-# In views
-from apps.users.services import UserService
-
-def my_view(request):
-    user_data = UserService.get_user_data(request.user)
-    return JsonResponse(user_data)
 ```
 
 ### Running Management Commands
