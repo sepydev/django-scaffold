@@ -15,10 +15,12 @@ services:
       timeout: 5s
       retries: 5
 
+{% if include_redis %}
   redis:
     image: redis:8.2-bookworm
     ports:
       - "6379:6379"
+{% endif %}
 
   app:
     build:
@@ -30,11 +32,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+{% if include_redis %}
+      redis:
+        condition: service_started
+{% endif %}
     env_file:
       - .env
     environment:
       DATABASE_URL: postgres://postgres@db:5432/app
 
+{% if include_celery %}
   celery:
     build:
       context: .
@@ -43,13 +50,17 @@ services:
     command: celery -A config worker --loglevel=info
     depends_on:
       - db
+{% if include_redis %}
       - redis
+{% endif %}
       - app
     env_file:
       - .env
     environment:
       DATABASE_URL: postgres://postgres@db:5432/app
+{% endif %}
 
+{% if include_celery_beat %}
   celery-beat:
     build:
       context: .
@@ -58,15 +69,23 @@ services:
     command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - db
+{% if include_redis %}
       - redis
+{% endif %}
       - app
+{% if include_celery %}
+      - celery
+{% endif %}
     env_file:
       - .env
     environment:
       DATABASE_URL: postgres://postgres@db:5432/app
     volumes:
       - celery_beat_data:/app/celerybeat-schedule
+{% endif %}
 
 volumes:
   postgres_data:
+{% if include_celery_beat %}
   celery_beat_data:
+{% endif %}

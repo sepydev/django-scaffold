@@ -1,0 +1,41 @@
+_templates_suffix: .jinja
+_envops:
+  keep_trailing_newline: true
+
+project_name:
+  type: str
+  help: "What is your project name?"
+  default: "django-scaffold"
+
+include_redis:
+  type: bool
+  help: "Include Redis service for caching and message broker?"
+  default: true
+
+include_celery:
+  type: bool
+  help: "Include Celery worker for background task processing?"
+  default: true
+  when: "{{ include_redis }}"
+
+include_celery_beat:
+  type: bool
+  help: "Include Celery Beat for periodic task scheduling?"
+  default: true
+  when: "{{ include_celery }}"
+
+# Timezone configuration warning
+timezone_warning:
+  type: str
+  help: "Current timezone setting (UTC recommended for production)"
+  default: "UTC"
+  multiline: true
+  placeholder: |
+    IMPORTANT: If you change Django's TIME_ZONE setting after creating
+    periodic tasks, you must reset the "last run time" for each task:
+
+    from django_celery_beat.models import PeriodicTask, PeriodicTasks
+    PeriodicTask.objects.all().update(last_run_at=None)
+    PeriodicTasks.update_changed()
+
+    This will reset the state as if tasks have never run before.
