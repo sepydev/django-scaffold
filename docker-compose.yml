@@ -27,28 +27,46 @@ services:
       target: prod
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       DATABASE_URL: postgres://postgres@db:5432/app
-    depends_on:
-      - db
-      - redis
 
   celery:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev
-    command: ["/opt/venv/bin/python", "-m", "celery", "-A", "config", "worker", "-l", "info"]
-    volumes:
-      - .:/app
-    environment:
-      - DEBUG=True
-      - DJANGO_SETTINGS_MODULE=config.settings.development
+      target: prod
+    command: celery -A config worker --loglevel=info
     depends_on:
       - db
       - redis
+      - app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://postgres@db:5432/app
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - db
+      - redis
+      - app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://postgres@db:5432/app
+    volumes:
+      - celery_beat_data:/app/celerybeat-schedule
 
 volumes:
   postgres_data:
+  celery_beat_data:

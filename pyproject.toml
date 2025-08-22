@@ -39,6 +39,7 @@ authors = [
 ]
 dependencies = [
   "celery>=5.3.2",
+  "django-celery-beat>=2.6.0",
   "django-environ>=0.10.0",
   "django-redis>=5.3.0",
   "django>=5.0.8",
