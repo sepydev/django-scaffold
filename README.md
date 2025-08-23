@@ -2,6 +2,93 @@
 
 A modern, production-ready Django 5 project structure with best practices, modular architecture, and comprehensive tooling using UV for dependency management.
 
+## 🎯 Quick Start with Copier
+
+This project is a **Copier template** that allows you to quickly generate new Django projects with all the best practices and configurations already set up.
+
+### Prerequisites
+
+- Python 3.13+
+- [Copier](https://copier.readthedocs.io/) template engine
+
+### Install Copier
+
+```bash
+# Using pip
+pip install copier
+
+# Using UV (recommended)
+uv tool install copier
+
+# Using pipx
+pipx install copier
+```
+
+### Create a New Project
+
+#### From GitHub (Recommended)
+```bash
+# Create a new project from the template
+copier copy gh:sepydev/django-scaffold my-new-project
+
+# Or use the full GitHub URL
+copier copy https://github.com/sepydev/django-scaffold.git my-new-project
+```
+
+### Interactive Configuration
+
+When you run Copier, it will ask you several questions to customize your project:
+
+1. **Project name**: The name of your new Django project
+2. **Include Redis**: Whether to include Redis service for caching and message broker
+3. **Include Celery**: Whether to include Celery worker for background tasks (requires Redis)
+4. **Include Celery Beat**: Whether to include Celery Beat for periodic tasks (requires Celery)
+5. **Timezone warning**: Important information about timezone configuration
+
+### Example Usage
+
+```bash
+$ copier copy gh:sepydev/django-scaffold my-awesome-project
+
+🎤 What is your project name? my-awesome-project
+🎤 Include Redis service for caching and message broker? Yes
+🎤 Include Celery worker for background task processing? Yes
+🎤 Include Celery Beat for periodic task scheduling? Yes
+🎤 Current timezone setting (UTC recommended for production) UTC
+
+Generating project...
+✅ Project created successfully!
+```
+
+### After Project Creation
+
+Navigate to your new project and set it up:
+
+```bash
+cd my-awesome-project
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your configuration
+
+docker-compose up --build
+
+docker-compose run --rm app /app/manage.py migrate
+docker-compose run --rm app /app/manage.py createsuperuser
+
+```
+
+### Update Existing Projects
+
+You can update projects created from this template:
+
+```bash
+# Update your project with the latest template changes
+copier update
+
+# This will show you what changed and allow you to merge updates
+```
+
 ## 🚀 Features
 
 - **Django 5.0+** with latest features and security updates
