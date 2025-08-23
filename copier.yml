@@ -5,7 +5,6 @@ _envops:
 project_name:
   type: str
   help: "What is your project name?"
-  default: "django-scaffold"
 
 include_redis:
   type: bool
@@ -16,12 +15,11 @@ include_celery:
   type: bool
   help: "Include Celery worker for background task processing?"
   default: true
-  when: "{{ include_redis }}"
 
 include_celery_beat:
   type: bool
   help: "Include Celery Beat for periodic task scheduling?"
-  default: true
+  default: false
   when: "{{ include_celery }}"
 
 # Timezone configuration warning
